@@ -1,6 +1,13 @@
 # TikTok Captcha Solver API
-## Import
+install Python
+## Import $ install
 pip install tiktok-captcha-solver --upgrade
+
+cd tiktok_captcha_solver
+pip install -r requires.txt
+
+## ################################
+
 selenium
 webdriver-manager
 pydantic
