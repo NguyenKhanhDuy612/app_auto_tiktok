@@ -2,26 +2,33 @@
 import { useState } from "react";
 
 const View = () => {
-  const [isCommentEnabled, setIsCommentEnabled] = useState(false); // Trạng thái checkbox "Tạo Bình Luận"
+  const [linkTiktok, setLinkTiktok] = useState("");
+  const [soLuongMat, setSoLuongMat] = useState(""); 
+  const [time, SetTime] = useState(""); 
+  const [isCommentEnabled, setIsCommentEnabled] = useState(false); 
+  const [comment, setComment] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Link Tiktok:", linkTiktok);
+    console.log("Số lượng mắt:", soLuongMat);
+    console.log("Tạo bình luận:", isCommentEnabled ? comment : "Không tạo bình luận");
+  };
 
   return (
     <>
       {/* Main Content */}
       <main className="flex-1 p-8 bg-white">
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="block font-semibold mb-1">Link Tiktok</label>
             <input
               type="text"
               placeholder="https://tiktok.com/@username/live"
+              value={linkTiktok}
+              onChange={(e) => setLinkTiktok(e.target.value)} 
               className="w-full border border-gray-300 rounded p-2"
             />
-          </div>
-          <div>
-            <label className="block font-semibold mb-1">Chọn Hashtags</label>
-            <select className="w-full border border-gray-300 rounded p-2">
-              <option></option>
-            </select>
           </div>
 
           <div>
@@ -29,14 +36,18 @@ const View = () => {
             <input
               type="number"
               placeholder="100"
+              value={soLuongMat} 
+              onChange={(e) => setSoLuongMat(e.target.value)} 
               className="w-full border border-gray-300 rounded p-2"
             />
           </div>
           <div>
-            <label className="block font-semibold mb-1">Số phút live</label>
+            <label className="block font-semibold mb-1">Thời gian hoạt động</label>
             <input
               type="number"
-              placeholder="30 phút"
+              placeholder="30p"
+              value={time} 
+              onChange={(e) => SetTime(e.target.value)}
               className="w-full border border-gray-300 rounded p-2"
             />
           </div>
@@ -50,9 +61,8 @@ const View = () => {
               id="checkbox-comment"
               type="checkbox"
               value=""
-              onChange={(e) => setIsCommentEnabled(e.target.checked)} // Cập nhật trạng thái checkbox
+              onChange={(e) => setIsCommentEnabled(e.target.checked)} 
             />
-            
             <label
               htmlFor="checkbox-comment"
               className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
@@ -72,7 +82,9 @@ const View = () => {
           <textarea
             id="message"
             rows={4}
-            disabled={!isCommentEnabled} // Vô hiệu hóa textarea nếu checkbox chưa được chọn
+            disabled={!isCommentEnabled} 
+            value={comment} 
+            onChange={(e) => setComment(e.target.value)} 
             className={`block p-2.5 w-full text-sm ${
               isCommentEnabled
                 ? "text-gray-900 bg-gray-50 border-gray-300"
@@ -82,7 +94,10 @@ const View = () => {
           ></textarea>
 
           <div className="text-right">
-            <button className="bg-blue-500 text-white px-4 py-2 rounded">
+            <button
+              type="submit"
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+            >
               ORDER NGAY
             </button>
           </div>
