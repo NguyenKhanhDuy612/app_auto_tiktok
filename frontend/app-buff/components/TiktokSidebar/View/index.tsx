@@ -1,26 +1,8 @@
 "use client";
-
-
-const ViewTiktok =() =>{
+const View =() =>{
     return (
         <>
-             <html lang="en">
-      <body className="antialiased bg-gray-100">
-        <div className="flex h-screen">
-          {/* Sidebar */}
-          <aside className="w-64 bg-gray-800 text-white flex flex-col">
-            <nav className="flex-1">
-              <ul className="space-y-2 p-4">
-             
-                <li className="font-semibold">TIKTOK</li>
-                <ul className="pl-4 space-y-1">
-                  <li>Tăng mắt live Tiktok</li>
-                </ul>
-              </ul>
-            </nav>
-            <footer className="p-4">
-            </footer>
-          </aside>
+       
           {/* Main Content */}
           <main className="flex-1 p-8 bg-white">
             <h1 className="text-xl font-bold mb-4">Dịch vụ Tiktok</h1>
@@ -60,12 +42,12 @@ const ViewTiktok =() =>{
   
 
   
-              <div className="flex items-center mb-4">
-                      <input id="default-checkbox" type="checkbox" value="" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                  <div className="flex items-center mb-4">
+                      <input id="checkbox-tim" type="checkbox" value=""  />
                       <label htmlFor="default-checkbox" className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Tăng Lượt Tym</label>
                   </div>
-                  <div className="flex items-center">
-                      <input checked id="default-checkbox" type="checkbox" value="" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
+                  <div className="flex items-center mb-4">
+                      <input id="checkbox-comment" type="checkbox" value=""  />
                       <label htmlFor="default-checkbox" className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Tạo Bình Luận</label>
                   </div>
 
@@ -79,14 +61,9 @@ const ViewTiktok =() =>{
             </form>
            
           </main>
-        </div>
-      </body>
-    </html>
+
         
         </>
     )
-
-
-
 }
-export default ViewTiktok;
+export default View;
