@@ -88,6 +88,26 @@ async def join_livestream_and_comment(page: Page, comments: str, num_comments: i
 
     print("🎉 Hoàn thành việc gửi bình luận!")
 
+def get_proxy_list():
+    print("🔄 Đang lấy danh sách proxy...")
+    url = "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all"
+    response = requests.get(url)
+    proxy_list = response.text.strip().split('\n')
+    print(f"✅ Đã lấy được {len(proxy_list)} proxy.")
+    return proxy_list
+
+def test_proxy(proxy):
+    proxies = {
+        "http": f"http://{proxy}",
+        "https": f"http://{proxy}",
+    }
+    try:
+        r = requests.get("http://httpbin.org/ip", proxies=proxies, timeout=5)
+        if r.status_code == 200:
+            return True
+    except Exception:
+        pass
+    return False
 
 @pytest.mark.asyncio
 async def test_join_livestream_and_comment(caplog):
@@ -95,43 +115,73 @@ async def test_join_livestream_and_comment(caplog):
     caplog.set_level(logging.DEBUG)
 
     async with async_playwright() as p:
-        # Khởi chạy trình duyệt
-        browser = await p.chromium.launch(
-            headless=False,
-        )
-        page = await browser.new_page()
-        config = StealthConfig(navigator_languages=False, navigator_vendor=False, navigator_user_agent=False)
-        await stealth_async(page, config)
+        proxy_list = get_proxy_list()
+        print(f"Số lượng proxy: {len(proxy_list)}")
+        proxychorm = ""
+        for proxy in proxy_list:
+            proxy = proxy.strip()
+            print(f"🧪 Đang thử proxy: {proxy}...", end=" ")
 
-        # Đăng nhập TikTok
-        await open_tiktkok_login(page)
+            if test_proxy(proxy):
+                print("✅ Thành công! Dùng được proxy.")
+                proxychorm = proxy
+                break
+            else:
+                print("❌ Không dùng được.")
 
-        # Đặt giá trị mặc định
-        num_comments = 5  # Số lượng bình luận mặc định
-        like = True  # Bật/tắt chức năng thả tim
-        print(f"Số lượng bình luận mặc định: {num_comments}")
-        print(f"Thả tim: {'Bật' if like else 'Tắt'}")
+        else:
+            print("🚫 Không tìm thấy proxy nào hoạt động.")
+        if proxychorm:
+            print(f"🧪 Đang thử proxy mở trình duyệt: {proxychorm}...", end=" ")
+            # Tạo một thư mục tạm thời cho user data dir
+            print(f"📁 User data directory: {user_data_dir}")
+            try:
+                # Khởi chạy trình duyệt với proxy và user_data_dir
+                browser = await p.chromium.launch(
+                    headless=False,
+                    proxy={
+                        "server": f"http://{proxychorm}",
+                    }
+                )
+                page = await browser.new_page()
+                config = StealthConfig(navigator_languages=False, navigator_vendor=False, navigator_user_agent=False)
+                await stealth_async(page, config)
 
-        # Danh sách bình luận
-        comments = [
-            "Video hay quá!",
-            "Tôi rất thích nội dung này",
-            "Cảm ơn bạn đã chia sẻ",
-            "❤️❤️❤️",
-            "Quá tuyệt vời!",
-            "Tôi sẽ chia sẻ video này",
-            "Nội dung chất lượng",
-            "Bạn thật tài năng",
-        ]
+                # Đăng nhập TikTok
+                await open_tiktkok_login(page)
 
-        # Tham gia livestream và gửi bình luận
-        await join_livestream_and_comment(page, comments, num_comments, like)
+                # Đặt giá trị mặc định
+                num_comments = 5  # Số lượng bình luận mặc định
+                like = True  # Bật/tắt chức năng thả tim
+                print(f"Số lượng bình luận mặc định: {num_comments}")
+                print(f"Thả tim: {'Bật' if like else 'Tắt'}")
 
-        # Giữ trình duyệt mở
-        print("✅ Trình duyệt vẫn đang mở. Nhấn Ctrl+C để thoát.")
+                # Danh sách bình luận
+                comments = [
+                    "Video hay quá!",
+                    "Tôi rất thích nội dung này",
+                    "Cảm ơn bạn đã chia sẻ",
+                    "❤️❤️❤️",
+                    "Quá tuyệt vời!",
+                    "Tôi sẽ chia sẻ video này",
+                    "Nội dung chất lượng",
+                    "Bạn thật tài năng",
+                ]
 
-        # Chờ vô hạn để giữ trình duyệt mở
-        await asyncio.Future()  # Chờ vô hạn
+                # Tham gia livestream và gửi bình luận
+                await join_livestream_and_comment(page, comments, num_comments, like)
+
+                # Giữ trình duyệt mở
+                print("✅ Trình duyệt vẫn đang mở. Nhấn Ctrl+C để thoát.")
+
+                # Chờ vô hạn để giữ trình duyệt mở
+                await asyncio.Future()  # Chờ vô hạn
+            finally:
+                # Đóng trình duyệt và xóa thư mục user data dir sau khi hoàn thành
+                if 'browser' in locals() and browser.is_connected:
+                    await browser.close()
+        else:
+            print("🚫 Không thể mở trình duyệt vì không tìm thấy proxy hoạt động.")
 
 if __name__ == "__main__":
     # Chạy kiểm tra thủ công
