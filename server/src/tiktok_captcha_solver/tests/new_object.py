@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import requests
+import random
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -41,34 +42,50 @@ async def open_tiktkok_login(page: Page) -> None:
     await asyncio.sleep(10)
 
 
-async def join_livestream_and_comment(page: Page, comment: str) -> None:
+async def join_livestream_and_comment(page: Page, comments: str, num_comments: int) -> None:
     """Tham gia livestream và gửi bình luận."""
     # Truy cập livestream
-    await page.goto("https://www.tiktok.com/@batabilliards16/live")
+    await page.goto("https://www.tiktok.com/@haokiet2001/live")
     await asyncio.sleep(10)
 
-    # Tìm ô nhập bình luận và thực hiện hover, click, rồi nhập
-    comment_box = page.locator('.tiktok-1772j3i[contenteditable="plaintext-only"]')
-    await comment_box.hover()  # Hover vào ô nhập bình luận
-    await asyncio.sleep(1)
-    await comment_box.click()  # Nhấn vào ô nhập bình luận
-    await asyncio.sleep(1)
-    await comment_box.fill(comment)  # Điền nội dung bình luận
-    await asyncio.sleep(1)
+    for i in range(num_comments):
+        # Chọn ngẫu nhiên một bình luận từ danh sách
+        random_comment = random.choice(comments)
 
-    # Nhấn nút gửi bình luận
-    send_button = page.locator('.tiktok-mortok.e2lzvyu9')  # Class của nút gửi
-    await send_button.hover()  # Hover vào nút gửi
-    await asyncio.sleep(1)
-    await send_button.click()  # Nhấn nút gửi
-    await asyncio.sleep(2)
+        # Tìm ô nhập bình luận và thực hiện hover, click, rồi nhập
+        comment_box = page.locator('.tiktok-1772j3i[contenteditable="plaintext-only"]')
+        await comment_box.hover()  # Hover vào ô nhập bình luận
+        await asyncio.sleep(1)
+        await comment_box.click()  # Nhấn vào ô nhập bình luận
+        await asyncio.sleep(1)
+        await comment_box.fill(random_comment)  # Điền nội dung bình luận
+        await asyncio.sleep(1)
 
-    # Đảm bảo bình luận đã được gửi
-    confirmation = page.locator('.tiktok-fa6jvh.e1tv929b2')  # Class xác nhận bình luận đã gửi
-    if await confirmation.is_visible():
-        print(f"✅ Đã gửi bình luận: {comment}")
-    else:
-        print("❌ Không thể gửi bình luận. Vui lòng kiểm tra lại.")
+        # Nhấn nút gửi bình luận
+        send_button = page.locator('.tiktok-mortok.e2lzvyu9')  # Class của nút gửi
+        await send_button.hover()  # Hover vào nút gửi
+        await asyncio.sleep(1)
+        await send_button.click()  # Nhấn nút gửi
+        await asyncio.sleep(2)
+
+        # Đảm bảo bình luận đã được gửi
+        confirmation = page.locator('.tiktok-fa6jvh.e1tv929b2')  # Class xác nhận bình luận đã gửi
+        if await confirmation.is_visible():
+            print(f"✅ Bình luận {i + 1}/{num_comments} đã gửi: {random_comment}")
+        else:
+            print(f"❌ Bình luận {i + 1}/{num_comments} không thể gửi. Vui lòng kiểm tra lại.")
+
+        # Thả tim
+        heart_button = page.locator('.tiktok-1cu4ad.e1tv929b3')  # Class của nút thả tim
+        if await heart_button.is_visible():
+            await heart_button.hover()  # Hover vào nút thả tim
+            await asyncio.sleep(1)
+            await heart_button.click()  # Nhấn nút thả tim
+            print(f"❤️ Đã thả tim sau bình luận {i + 1}/{num_comments}.")
+        else:
+            print(f"❌ Không thể thả tim sau bình luận {i + 1}/{num_comments}.")
+
+    print("🎉 Hoàn thành việc gửi bình luận!")
 
 
 @pytest.mark.asyncio
@@ -88,9 +105,24 @@ async def test_join_livestream_and_comment(caplog):
         # Đăng nhập TikTok
         await open_tiktkok_login(page)
 
+        # Đặt giá trị mặc định
+        num_comments = 5  # Số lượng bình luận mặc định
+        print(f"Số lượng bình luận mặc định: {num_comments}")
+
+        # Danh sách bình luận
+        comments = [
+            "Video hay quá!",
+            "Tôi rất thích nội dung này",
+            "Cảm ơn bạn đã chia sẻ",
+            "❤️❤️❤️",
+            "Quá tuyệt vời!",
+            "Tôi sẽ chia sẻ video này",
+            "Nội dung chất lượng",
+            "Bạn thật tài năng",
+        ]
+
         # Tham gia livestream và gửi bình luận
-        comment = "Hello Hoang"
-        await join_livestream_and_comment(page, comment)
+        await join_livestream_and_comment(page, comments, num_comments)
 
         # Giữ trình duyệt mở
         print("✅ Trình duyệt vẫn đang mở. Nhấn Ctrl+C để thoát.")
