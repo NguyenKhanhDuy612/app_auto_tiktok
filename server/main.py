@@ -33,3 +33,11 @@ async def watch(input_data: WatchInput):
         return {"message": "chương trình đã hoàn thành!!!"}
     except Exception as e:
         return {"message": f"Error: {str(e)}"}
+
+@app.get("/hastag")
+async def hastag(hastag: str):
+    try:
+        # Xử lý hastag ở đây
+        return {"message": f"Đã xử lý hastag: {hastag}"}
+    except Exception as e:
+        return {"message": f"Error: {str(e)}"}

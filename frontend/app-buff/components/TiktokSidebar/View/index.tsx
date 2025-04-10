@@ -1,4 +1,5 @@
 "use client";
+import { callApi } from "@/apiCaller";
 import { useState } from "react";
 
 const View = () => {
@@ -13,6 +14,11 @@ const View = () => {
     console.log("Link Tiktok:", linkTiktok);
     console.log("Số lượng mắt:", soLuongMat);
     console.log("Tạo bình luận:", isCommentEnabled ? comment : "Không tạo bình luận");
+    callApi("/watch", "POST", {
+
+    }).then((res) => {
+      
+    })
   };
 
   return (
