@@ -7,12 +7,18 @@ const View = () => {
   const [time, SetTime] = useState(""); 
   const [isCommentEnabled, setIsCommentEnabled] = useState(false); 
   const [comment, setComment] = useState("");
+  const [isHeartEnabled, setIsHeartEnabled] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const commentLines = comment
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line !== "");
     console.log("Link Tiktok:", linkTiktok);
     console.log("Số lượng mắt:", soLuongMat);
     console.log("Tạo bình luận:", isCommentEnabled ? comment : "Không tạo bình luận");
+    console.log("Bình luận:", commentLines);
   };
 
   return (
@@ -42,6 +48,13 @@ const View = () => {
             />
           </div>
           <div>
+            <label className="block font-semibold mb-1">Chọn TK theo Hashtag</label>
+            <select
+             
+              className="w-full border border-gray-300 rounded p-2"
+            />
+          </div>
+          <div>
             <label className="block font-semibold mb-1">Thời gian hoạt động</label>
             <input
               type="number"
@@ -52,9 +65,19 @@ const View = () => {
             />
           </div>
           <div className="flex items-center mb-4">
-                      <input id="checkbox-tim" type="checkbox" value=""  />
-                      <label htmlFor="default-checkbox" className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Tăng Lượt Tym</label>
-              </div>
+            <input
+              id="checkbox-heart"
+              type="checkbox"
+              value=""
+              onChange={(e) => setIsHeartEnabled(e.target.checked)}
+            />
+            <label
+              htmlFor="checkbox-heart"
+              className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+            >
+              Tăng Lượt Tym
+            </label>
+          </div>
 
           <div className="flex items-center mb-4">
             <input
@@ -77,20 +100,20 @@ const View = () => {
               isCommentEnabled ? "text-gray-900" : "text-gray-400"
             }`}
           >
-            Nhập Bình Luận Mà Bạn Muốn
+            Nhập Bình Luận Mà Bạn Muốn (1 dòng enter là 1 comment )
           </label>
           <textarea
             id="message"
             rows={4}
-            disabled={!isCommentEnabled} 
-            value={comment} 
-            onChange={(e) => setComment(e.target.value)} 
+            disabled={!isCommentEnabled}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
             className={`block p-2.5 w-full text-sm ${
               isCommentEnabled
                 ? "text-gray-900 bg-gray-50 border-gray-300"
                 : "text-gray-400 bg-gray-200 border-gray-200"
             } rounded-lg border focus:ring-blue-500 focus:border-blue-500`}
-            placeholder="Write your thoughts here..."
+            placeholder="Nhập mỗi bình luận trên một dòng..."
           ></textarea>
 
           <div className="text-right">
