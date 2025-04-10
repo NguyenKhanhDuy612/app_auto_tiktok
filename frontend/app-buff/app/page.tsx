@@ -1,12 +1,13 @@
-import Image from "next/image";
-import Hero from "@/components/Hero";
-import ViewTiktok from "@/components/ViewTiktok"
+
+import Tiktok from "@/components/TiktokSidebar"
+// import RouterPage from '@/router';
 
 export default function Home() {
   return (
     <main>
       {/* <Hero/> */}
-      <ViewTiktok />
+      {/* <RouterPage/> */}
+      <Tiktok />
     </main>
   );
 }
