@@ -2,8 +2,12 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from bson.objectid import ObjectId
 from src.tiktok_captcha_solver.tests.new_object import test_join_livestream_and_comment
-from src.models.user_model import get_user_by_quantity
+
+# Schemas
 from src.schemas.watch_input import WatchInput
+
+# models
+from src.models.user_model import get_user_by_quantity
 
 app = FastAPI()
 
@@ -29,17 +33,3 @@ async def watch(input_data: WatchInput):
         return {"message": "chương trình đã hoàn thành!!!"}
     except Exception as e:
         return {"message": f"Error: {str(e)}"}
-        
-
-# @app.post("/items")
-# def create_item(item: Item):
-#     result = collection.insert_one(item.dict())
-#     return {"id": str(result.inserted_id)}
-
-@app.get("/items")
-def get_items():
-    items = []
-    for item in collection.find():
-        item["_id"] = str(item["_id"])
-        items.append(item)
-    return items
