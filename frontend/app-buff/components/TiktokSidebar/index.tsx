@@ -8,8 +8,8 @@ import Like from "@/components/TiktokSidebar/Like";
 
 function Tiktok() {
   const [activeComponent, setActiveComponent] = useState("view"); // Trạng thái mặc định là "view"
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // Trạng thái mở/đóng dropdown
-
+  const [title, setTitle] = useState("Dịch vụ Tiktok: Tăng mắt live Tiktok"); // Tiêu đề mặc định
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const renderComponent = () => {
     switch (activeComponent) {
       case "view":
@@ -44,25 +44,37 @@ function Tiktok() {
                 {isDropdownOpen && ( // Hiển thị dropdown nếu trạng thái mở
                   <ul className="pl-4 space-y-1 mt-2">
                     <li
-                      onClick={() => setActiveComponent("view")}
+                      onClick={() => {
+                        setActiveComponent("view");
+                        setTitle("Dịch vụ Tiktok: Tăng mắt live Tiktok");
+                      }}
                       className="cursor-pointer hover:text-blue-400"
                     >
                       Tăng mắt live Tiktok
                     </li>
                     <li
-                      onClick={() => setActiveComponent("follow")}
+                      onClick={() => {
+                        setActiveComponent("follow");
+                        setTitle("Dịch vụ Tiktok: Tăng follow Tiktok");
+                      }}
                       className="cursor-pointer hover:text-blue-400"
                     >
                       Tăng follow Tiktok
                     </li>
                     <li
-                      onClick={() => setActiveComponent("heart")}
+                      onClick={() => {
+                        setActiveComponent("heart");
+                        setTitle("Dịch vụ Tiktok: Tăng tim Tiktok");
+                      }}
                       className="cursor-pointer hover:text-blue-400"
                     >
                       Tăng tim Tiktok
                     </li>
                     <li
-                      onClick={() => setActiveComponent("like")}
+                      onClick={() => {
+                        setActiveComponent("like");
+                        setTitle("Dịch vụ Tiktok: Tăng like Tiktok");
+                      }}
                       className="cursor-pointer hover:text-blue-400"
                     >
                       Tăng like Tiktok
@@ -77,7 +89,7 @@ function Tiktok() {
 
         {/* Main Content */}
         <main className="flex-1 p-8 bg-white">
-          <h1 className="text-xl font-bold mb-4">Dịch vụ Tiktok</h1>
+          <h1 className="text-xl font-bold mb-4">{title}</h1> {/* Hiển thị tiêu đề động */}
           {renderComponent()} {/* Hiển thị component dựa trên trạng thái */}
         </main>
       </div>
