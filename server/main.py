@@ -1,8 +1,8 @@
 from fastapi import FastAPI
-from src.utils.database import collection
 from pydantic import BaseModel
 from bson.objectid import ObjectId
 from src.tiktok_captcha_solver.tests.new_object import test_join_livestream_and_comment
+from src.models.user_model import get_user_by_quantity
 from src.schemas.watch_input import WatchInput
 
 app = FastAPI()
@@ -17,14 +17,15 @@ async def watch(input_data: WatchInput):
         hastag = input_data.hastag
         users = input_data.users
 
-        print(f"Hashtag: {hastag}")
-        print(f"Users: {users}")
+        # Lấy danh sách người dùng từ database
+        listUser = get_user_by_quantity(users)
 
-        for i in range(users):
-            # Lưu vào database
-            result = collection.insert_one(input_data.dict())
-            print(f"Inserted ID: {result.inserted_id}")
-        # await test_join_livestream_and_comment(input_data)
+        # Gán listUser vào input_data
+        input_data.listUser = listUser
+
+        # Truyền input_data vào hàm
+        print("input_data:", input_data)
+        await test_join_livestream_and_comment(input_data)
         return {"message": "chương trình đã hoàn thành!!!"}
     except Exception as e:
         return {"message": f"Error: {str(e)}"}
