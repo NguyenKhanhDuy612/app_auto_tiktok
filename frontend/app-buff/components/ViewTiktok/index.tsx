@@ -21,6 +21,7 @@ const ViewTiktok =() =>{
             <footer className="p-4">
             </footer>
           </aside>
+          
 
           {/* Main Content */}
           <main className="flex-1 p-8 bg-white">
