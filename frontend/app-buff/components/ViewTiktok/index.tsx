@@ -21,8 +21,6 @@ const ViewTiktok =() =>{
             <footer className="p-4">
             </footer>
           </aside>
-          
-
           {/* Main Content */}
           <main className="flex-1 p-8 bg-white">
             <h1 className="text-xl font-bold mb-4">Dịch vụ Tiktok</h1>
@@ -31,6 +29,7 @@ const ViewTiktok =() =>{
                 <label className="block font-semibold mb-1">Link Tiktok</label>
                 <input
                   type="text"
+                  
                   placeholder="https://tiktok.com/@username/live"
                   className="w-full border border-gray-300 rounded p-2"
                 />
