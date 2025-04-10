@@ -7,7 +7,7 @@ const Like =() =>{
         
           {/* Main Content */}
           <main className="flex-1 p-8 bg-white">
-            <h1 className="text-xl font-bold mb-4">Dịch vụ Tiktok</h1>
+           
             <form className="space-y-4">
               <div>
                 <label className="block font-semibold mb-1">Link Tiktok</label>
