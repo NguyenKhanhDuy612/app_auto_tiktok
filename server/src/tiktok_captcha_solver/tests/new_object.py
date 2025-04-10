@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 import requests
-import random
+import random 
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -42,7 +42,7 @@ async def open_tiktkok_login(page: Page) -> None:
     await asyncio.sleep(10)
 
 
-async def join_livestream_and_comment(page: Page, comments: str, num_comments: int) -> None:
+async def join_livestream_and_comment(page: Page, comments: str, num_comments: int, like: bool) -> None:
     """Tham gia livestream và gửi bình luận."""
     # Truy cập livestream
     await page.goto("https://www.tiktok.com/@haokiet2001/live")
@@ -76,14 +76,15 @@ async def join_livestream_and_comment(page: Page, comments: str, num_comments: i
             print(f"❌ Bình luận {i + 1}/{num_comments} không thể gửi. Vui lòng kiểm tra lại.")
 
         # Thả tim
-        heart_button = page.locator('.tiktok-1cu4ad.e1tv929b3')  # Class của nút thả tim
-        if await heart_button.is_visible():
-            await heart_button.hover()  # Hover vào nút thả tim
-            await asyncio.sleep(1)
-            await heart_button.click()  # Nhấn nút thả tim
-            print(f"❤️ Đã thả tim sau bình luận {i + 1}/{num_comments}.")
-        else:
-            print(f"❌ Không thể thả tim sau bình luận {i + 1}/{num_comments}.")
+        if like:
+            heart_button = page.locator('.tiktok-1cu4ad.e1tv929b3')  # Class của nút thả tim
+            if await heart_button.is_visible():
+                await heart_button.hover()  # Hover vào nút thả tim
+                await asyncio.sleep(1)
+                await heart_button.click()  # Nhấn nút thả tim
+                print(f"❤️ Đã thả tim sau bình luận {i + 1}/{num_comments}.")
+            else:
+                print(f"❌ Không thể thả tim sau bình luận {i + 1}/{num_comments}.")
 
     print("🎉 Hoàn thành việc gửi bình luận!")
 
@@ -107,7 +108,9 @@ async def test_join_livestream_and_comment(caplog):
 
         # Đặt giá trị mặc định
         num_comments = 5  # Số lượng bình luận mặc định
+        like = True  # Bật/tắt chức năng thả tim
         print(f"Số lượng bình luận mặc định: {num_comments}")
+        print(f"Thả tim: {'Bật' if like else 'Tắt'}")
 
         # Danh sách bình luận
         comments = [
@@ -122,7 +125,7 @@ async def test_join_livestream_and_comment(caplog):
         ]
 
         # Tham gia livestream và gửi bình luận
-        await join_livestream_and_comment(page, comments, num_comments)
+        await join_livestream_and_comment(page, comments, num_comments, like)
 
         # Giữ trình duyệt mở
         print("✅ Trình duyệt vẫn đang mở. Nhấn Ctrl+C để thoát.")
