@@ -14,6 +14,8 @@ import pytest
 from tiktok_captcha_solver.captchatype import CaptchaType
 from ..asyncplaywrightsolver import AsyncPlaywrightSolver
 
+from src.schemas.watch_input import WatchInput  # Import từ file mới
+
 
 async def open_tiktkok_login(page: Page) -> None:
     """Đăng nhập vào TikTok với xử lý CAPTCHA."""
@@ -90,7 +92,7 @@ async def join_livestream_and_comment(page: Page, comments: str, num_comments: i
 
 
 @pytest.mark.asyncio
-async def test_join_livestream_and_comment(caplog):
+async def test_join_livestream_and_comment(input_data: WatchInput):
     """Kiểm tra chức năng tham gia livestream và gửi bình luận."""
     caplog.set_level(logging.DEBUG)
 
