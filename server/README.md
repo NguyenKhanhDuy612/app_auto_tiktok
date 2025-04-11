@@ -25,3 +25,5 @@ get api https://www.sadcaptcha.com/
 ## RUN
 
 pytest new_object.py
+
+npm i
