@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from bson.objectid import ObjectId
 from src.tiktok_captcha_solver.tests.new_object import test_join_livestream_and_comment
 
 # Schemas
