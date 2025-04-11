@@ -1,13 +1,11 @@
 # Sử dụng Node.js làm base image
-FROM node:18-alpine
+FROM node:18
 
 # Thiết lập thư mục làm việc trong container
-WORKDIR /app
+WORKDIR /usr/src/app
 
-# Sao chép file package.json và package-lock.json vào container
-COPY package.json package-lock.json ./
-
-# Cài đặt các dependencies
+# Sao chép package.json và cài đặt dependencies
+COPY package.json ./
 RUN npm install
 
 # Sao chép toàn bộ mã nguồn vào container
@@ -16,8 +14,11 @@ COPY . .
 # Build ứng dụng Next.js
 RUN npm run build
 
-# Expose cổng 3000 để ứng dụng chạy
+# Kiểm tra thư mục .next
+RUN ls -la .next
+
+# Expose cổng 3000
 EXPOSE 3000
 
-# Lệnh khởi chạy ứng dụng
+# Chạy ứng dụng ở chế độ production
 CMD ["npm", "start"]

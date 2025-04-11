@@ -3,6 +3,7 @@ import datetime
 import logging
 import os
 import random
+import threading
 import time
 from dotenv import load_dotenv
 import requests
@@ -68,69 +69,72 @@ def open_tiktok_login(driver, username, password) -> None:
     # await asyncio.sleep(10)
     time.sleep(10)
 
+def like_continuously(driver, watch_until: datetime.datetime):
+    while datetime.datetime.now() < watch_until:
+        try:
+            heart_button = WebDriverWait(driver, 3).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, '.tiktok-1cu4ad.e1tv929b3'))
+            )
+            heart_button.click()
+            print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] ❤️ Đã thả tim.")
+        except Exception as e:
+            print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] ⚠️ Không thể thả tim: {e}")
+        time.sleep(10)  # Cách nhau 10 giây mỗi lần tym
+
+def comment_on_livestream(driver, comments: list[str], num_comments: int):
+    for i in range(num_comments):
+        try:
+            random_comment = random.choice(comments)
+            print(f"📝 Đang chuẩn bị bình luận {i + 1}/{num_comments}: {random_comment}")
+            time.sleep(15)
+
+            comment_box = WebDriverWait(driver, 10).until(
+                EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[contenteditable="plaintext-only"]'))
+            )
+            print("✅ Đã tìm thấy ô bình luận.")
+            comment_box.click()
+            time.sleep(1)
+            comment_box.send_keys(random_comment)
+            time.sleep(1)
+
+            send_button = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, '.e2lzvyu9'))
+            )
+            send_button.click()
+            print(f"✅ Bình luận {i + 1}/{num_comments} đã gửi: {random_comment}")
+            time.sleep(2)
+
+        except Exception as e:
+            print(f"❌ Lỗi khi gửi bình luận {i + 1}: {e}")
+
 def join_livestream_and_comment(driver, comments: list[str], num_comments: int, like: bool,urlVideo: str, timelogout: int) -> None:
     """Tham gia livestream và gửi bình luận."""
     try:
         driver.get(urlVideo)
         time.sleep(10)
         start_watch_time = datetime.datetime.now()
-        for i in range(num_comments):
-            try:
-                random_comment = random.choice(comments)
-                print(f"📝 Đang chuẩn bị bình luận {i + 1}/{num_comments}: {random_comment}")
-                time.sleep(15)
+        watch_until = start_watch_time + datetime.timedelta(minutes=timelogout)
 
-                # Tìm ô nhập bình luận
-                comment_box = WebDriverWait(driver, 10).until(
-                    EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[contenteditable="plaintext-only"]'))
-                )
-                print("✅ Đã tìm thấy ô bình luận.")
-                comment_box.click()
-                time.sleep(1)
-                comment_box.send_keys(random_comment)
-                time.sleep(1)
+        # Bắt đầu thread thả tym nếu like = True
+        if like:
+            like_thread = threading.Thread(target=like_continuously, args=(driver, watch_until))
+            like_thread.start()
 
-                # Nhấn nút gửi
-                send_button = WebDriverWait(driver, 5).until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, '.e2lzvyu9'))
-                )
-                send_button.click()
-                print(f"✅ Bình luận {i + 1}/{num_comments} đã gửi: {random_comment}")
-                time.sleep(2)
+        # Bắt đầu bình luận (trong thread chính)
+        comment_on_livestream(driver, comments, num_comments)
 
-                # Thả tim nếu bật
-                if like:
-                    try:
-                        heart_button = WebDriverWait(driver, 5).until(
-                            EC.element_to_be_clickable((By.CSS_SELECTOR, '.tiktok-1cu4ad.e1tv929b3'))
-                        )
-                        heart_button.click()
-                        print(f"❤️ Đã thả tim sau bình luận {i + 1}")
-                    except Exception as e:
-                        print(f"⚠️ Không tìm thấy hoặc không thể click nút thả tim: {e}")
+        # Hiển thị thời gian xem live còn lại
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] ⏳ Đang xem live đến {watch_until.strftime('%H:%M:%S')}.")
+        while datetime.datetime.now() < watch_until:
+            remaining_time = watch_until - datetime.datetime.now()
+            print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] ⏳ Còn lại: {remaining_time.seconds} giây.", end='\r')
+            time.sleep(5)
 
-            except Exception as e:
-                print(f"❌ Lỗi khi gửi bình luận {i + 1}: {e}")
-
-        print("🎉 Hoàn thành việc gửi bình luận!")
-        # Bắt đầu tính thời gian xem live
-        if timelogout > 0:
-            watch_until = start_watch_time + datetime.timedelta(minutes=timelogout)
-            print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] ⏳ Bắt đầu xem live từ {start_watch_time.strftime('%H:%M:%S')} đến {watch_until.strftime('%H:%M:%S')}.")
-            while datetime.datetime.now() < watch_until:
-                remaining_time = watch_until - datetime.datetime.now()
-                time_watched = datetime.datetime.now() - start_watch_time
-                print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] ⏳ Đang xem live. Đã xem được: {time_watched.seconds} giây. Còn lại: {remaining_time.seconds} giây.", end='\r')
-                time.sleep(5)  # Kiểm tra thời gian mỗi 5 giây
-
-            end_watch_time = datetime.datetime.now()
-            duration_watched = end_watch_time - start_watch_time
-            print(f"\n[{datetime.datetime.now().strftime('%H:%M:%S')}] 🎬 Đã hết thời gian xem live. Đã xem trong: {duration_watched.seconds} giây.")
-
-            # Cuộn màn hình để xem live khác (thao tác đơn giản, có thể cần cải thiện)
-            print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 🔄 Đang cuộn màn hình để xem live khác...")
-            driver.execute_script("window.scrollBy(0, 500);")  # Cuộn xuống một chút
-            time.sleep(5) # Chờ một chút sau khi cuộn
+        # Kết thúc
+        print(f"\n[{datetime.datetime.now().strftime('%H:%M:%S')}] 🎬 Hết thời gian xem live.")
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 🔄 Cuộn màn hình để xem live khác...")
+        driver.execute_script("window.scrollBy(0, 500);")
+        time.sleep(5)
 
         print("🚪 Đang đóng trình duyệt.")
         driver.quit()
