@@ -74,7 +74,7 @@ const View = () => {
           <div>
             <label className="block font-semibold mb-1">Chọn TK theo Hashtag</label>
             <select
-              defaultValue={"Chọn Hashtag"}
+            defaultValue={""}
               onChange={(e) =>
                 setSelectedHashtags(
                   Array.from(e.target.selectedOptions, (option) => option.value)
@@ -83,6 +83,7 @@ const View = () => {
               aria-placeholder="Chọn Hashtag"
               className="w-full border border-gray-300 rounded p-2"
             >
+              <option value={""} disabled>Chọn hashtag</option>
               {initialHashtags.current.map((tag: any) => (
                 <option key={tag._id} value={tag.name}>
                   {tag.name}
