@@ -4,4 +4,3 @@ dist/**
 .DS_Store
 .env
 .pytest_cache
-node_modules/
