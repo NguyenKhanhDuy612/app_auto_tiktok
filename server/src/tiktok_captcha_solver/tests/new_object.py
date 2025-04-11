@@ -11,6 +11,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from ..seleniumsolver import SeleniumSolver
 
 from src.models.proxy_model import verify_proxy_db
 from src.schemas.watch_input import WatchInput
@@ -48,12 +49,21 @@ def open_tiktok_login(driver, username, password) -> None:
     try:
         login_button = driver.find_element(By.XPATH, '//button[contains(@data-e2e,"login-button")]')
         login_button.click()
-        time.sleep(10)
+        time.sleep(20)
         print("✅ Đã cố gắng đăng nhập.")
     except Exception as e:
         print(f"⚠️ Lỗi khi nhấn nút đăng nhập: {e}")
         return
-    print("✅ CAPTCHA đã được xử lý (nếu có).")
+    
+    #captcha
+    try:
+        sadcaptcha = SeleniumSolver(driver, os.environ["API_KEY"], mouse_step_size=2)
+        sadcaptcha.solve_captcha_if_present()
+        print("✅ CAPTCHA đã được xử lý (nếu có).")
+    except Exception as e:
+        print(f"⚠️ Lỗi khi xử lý CAPTCHA: {e}")
+        return
+
 
     # await asyncio.sleep(10)
     time.sleep(10)
