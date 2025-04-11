@@ -31,3 +31,5 @@ cd server
 pip install fastapi uvicorn pymongo python-dotenv
 
 run uvicorn main:app --reload to start swagger
+
+npm i
