@@ -1,13 +1,17 @@
 "use client";
-import { useState } from "react";
+import { callApi } from "@/apiCaller";
+import { useEffect, useRef, useState } from "react";
 
 const View = () => {
+
+  const initialHashtags = useRef([])
   const [linkTiktok, setLinkTiktok] = useState("");
-  const [soLuongMat, setSoLuongMat] = useState(""); 
-  const [time, SetTime] = useState(""); 
-  const [isCommentEnabled, setIsCommentEnabled] = useState(false); 
+  const [soLuongMat, setSoLuongMat] = useState(0);
+  const [time, SetTime] = useState(0);
+  const [isCommentEnabled, setIsCommentEnabled] = useState(false);
   const [comment, setComment] = useState("");
   const [isHeartEnabled, setIsHeartEnabled] = useState(false);
+  const [selectedHashtags, setSelectedHashtags] = useState<string[]>([]); // Lưu các hashtag được chọn
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,11 +19,31 @@ const View = () => {
       .split("\n")
       .map((line) => line.trim())
       .filter((line) => line !== "");
-    console.log("Link Tiktok:", linkTiktok);
-    console.log("Số lượng mắt:", soLuongMat);
-    console.log("Tạo bình luận:", isCommentEnabled ? comment : "Không tạo bình luận");
-    console.log("Bình luận:", commentLines);
+    // console.log("Link Tiktok:", linkTiktok);
+    // console.log("Số lượng mắt:", soLuongMat);
+    // console.log("Tạo bình luận:", isCommentEnabled ? comment : "Không tạo bình luận");
+    // console.log("Bình luận:", commentLines);
+    callApi("/watch", "POST", {
+      url: linkTiktok,
+      time: time,
+      comment: commentLines,
+      like: isHeartEnabled,
+      users: soLuongMat,
+    }).catch((err) => {
+      console.error(err);
+    })
   };
+
+  useEffect(() => {
+    callApi("/hastag", "GET").then((res) => {
+      if (res.status === 200) {
+        initialHashtags.current = res.data.result
+      }
+      setSelectedHashtags(initialHashtags.current);
+    })
+  }, [])
+
+  console.log("selectedHashtags", selectedHashtags)
 
   return (
     <>
@@ -32,7 +56,7 @@ const View = () => {
               type="text"
               placeholder="https://tiktok.com/@username/live"
               value={linkTiktok}
-              onChange={(e) => setLinkTiktok(e.target.value)} 
+              onChange={(e) => setLinkTiktok(e.target.value)}
               className="w-full border border-gray-300 rounded p-2"
             />
           </div>
@@ -42,25 +66,39 @@ const View = () => {
             <input
               type="number"
               placeholder="100"
-              value={soLuongMat} 
-              onChange={(e) => setSoLuongMat(e.target.value)} 
+              value={soLuongMat}
+              onChange={(e) => setSoLuongMat(Number(e.target.value))}
               className="w-full border border-gray-300 rounded p-2"
             />
           </div>
           <div>
             <label className="block font-semibold mb-1">Chọn TK theo Hashtag</label>
             <select
-             
+            defaultValue={""}
+              onChange={(e) =>
+                setSelectedHashtags(
+                  Array.from(e.target.selectedOptions, (option) => option.value)
+                )
+              }
+              aria-placeholder="Chọn Hashtag"
               className="w-full border border-gray-300 rounded p-2"
-            />
+            >
+              <option value={""} disabled>Chọn hashtag</option>
+              {initialHashtags.current.map((tag: any) => (
+                <option key={tag._id} value={tag.name}>
+                  {tag.name}
+                </option>
+              ))}
+
+            </select>
           </div>
           <div>
-            <label className="block font-semibold mb-1">Thời gian hoạt động</label>
+            <label className="block font-semibold mb-1">Thời gian hoạt động (phút)</label>
             <input
               type="number"
               placeholder="30p"
-              value={time} 
-              onChange={(e) => SetTime(e.target.value)}
+              value={time}
+              onChange={(e) => SetTime(Number(e.target.value))}
               className="w-full border border-gray-300 rounded p-2"
             />
           </div>
@@ -84,7 +122,7 @@ const View = () => {
               id="checkbox-comment"
               type="checkbox"
               value=""
-              onChange={(e) => setIsCommentEnabled(e.target.checked)} 
+              onChange={(e) => setIsCommentEnabled(e.target.checked)}
             />
             <label
               htmlFor="checkbox-comment"
@@ -96,9 +134,8 @@ const View = () => {
 
           <label
             htmlFor="message"
-            className={`block mb-2 text-sm font-medium ${
-              isCommentEnabled ? "text-gray-900" : "text-gray-400"
-            }`}
+            className={`block mb-2 text-sm font-medium ${isCommentEnabled ? "text-gray-900" : "text-gray-400"
+              }`}
           >
             Nhập Bình Luận Mà Bạn Muốn (1 dòng enter là 1 comment )
           </label>
@@ -108,11 +145,10 @@ const View = () => {
             disabled={!isCommentEnabled}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            className={`block p-2.5 w-full text-sm ${
-              isCommentEnabled
-                ? "text-gray-900 bg-gray-50 border-gray-300"
-                : "text-gray-400 bg-gray-200 border-gray-200"
-            } rounded-lg border focus:ring-blue-500 focus:border-blue-500`}
+            className={`block p-2.5 w-full text-sm ${isCommentEnabled
+              ? "text-gray-900 bg-gray-50 border-gray-300"
+              : "text-gray-400 bg-gray-200 border-gray-200"
+              } rounded-lg border focus:ring-blue-500 focus:border-blue-500`}
             placeholder="Nhập mỗi bình luận trên một dòng..."
           ></textarea>
 
