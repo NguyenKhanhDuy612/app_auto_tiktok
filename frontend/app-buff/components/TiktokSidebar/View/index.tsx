@@ -6,8 +6,8 @@ const View = () => {
 
   const initialHashtags = useRef([])
   const [linkTiktok, setLinkTiktok] = useState("");
-  const [soLuongMat, setSoLuongMat] = useState("");
-  const [time, SetTime] = useState("");
+  const [soLuongMat, setSoLuongMat] = useState(0);
+  const [time, SetTime] = useState(0);
   const [isCommentEnabled, setIsCommentEnabled] = useState(false);
   const [comment, setComment] = useState("");
   const [isHeartEnabled, setIsHeartEnabled] = useState(false);
@@ -19,16 +19,16 @@ const View = () => {
       .split("\n")
       .map((line) => line.trim())
       .filter((line) => line !== "");
-    console.log("Link Tiktok:", linkTiktok);
-    console.log("Số lượng mắt:", soLuongMat);
-    console.log("Tạo bình luận:", isCommentEnabled ? comment : "Không tạo bình luận");
-    console.log("Bình luận:", commentLines);
+    // console.log("Link Tiktok:", linkTiktok);
+    // console.log("Số lượng mắt:", soLuongMat);
+    // console.log("Tạo bình luận:", isCommentEnabled ? comment : "Không tạo bình luận");
+    // console.log("Bình luận:", commentLines);
     callApi("/watch", "POST", {
       url: linkTiktok,
       time: time,
       comment: commentLines,
       like: isHeartEnabled,
-      users: soLuongMat
+      users: soLuongMat,
     }).catch((err) => {
       console.error(err);
     })
@@ -36,12 +36,14 @@ const View = () => {
 
   useEffect(() => {
     callApi("/hastag", "GET").then((res) => {
-      console.log(res);
       if (res.status === 200) {
-        initialHashtags.current = res.data.data.map((item: any) => item.name);
+        initialHashtags.current = res.data.result
       }
+      setSelectedHashtags(initialHashtags.current);
     })
   }, [])
+
+  console.log("selectedHashtags", selectedHashtags)
 
   return (
     <>
@@ -65,30 +67,37 @@ const View = () => {
               type="number"
               placeholder="100"
               value={soLuongMat}
-              onChange={(e) => setSoLuongMat(e.target.value)}
+              onChange={(e) => setSoLuongMat(Number(e.target.value))}
               className="w-full border border-gray-300 rounded p-2"
             />
           </div>
           <div>
             <label className="block font-semibold mb-1">Chọn TK theo Hashtag</label>
             <select
-              multiple
-              value={selectedHashtags}
+              defaultValue={"Chọn Hashtag"}
               onChange={(e) =>
                 setSelectedHashtags(
                   Array.from(e.target.selectedOptions, (option) => option.value)
                 )
               }
+              aria-placeholder="Chọn Hashtag"
               className="w-full border border-gray-300 rounded p-2"
-            />
+            >
+              {initialHashtags.current.map((tag: any) => (
+                <option key={tag._id} value={tag.name}>
+                  {tag.name}
+                </option>
+              ))}
+
+            </select>
           </div>
           <div>
-            <label className="block font-semibold mb-1">Thời gian hoạt động</label>
+            <label className="block font-semibold mb-1">Thời gian hoạt động (phút)</label>
             <input
               type="number"
               placeholder="30p"
               value={time}
-              onChange={(e) => SetTime(e.target.value)}
+              onChange={(e) => SetTime(Number(e.target.value))}
               className="w-full border border-gray-300 rounded p-2"
             />
           </div>

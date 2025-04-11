@@ -28,7 +28,6 @@ class Item(BaseModel):
 @app.post("/watch")
 async def watch(input_data: WatchInput):
     try:
-        hastag = input_data.hastag
         users = input_data.users
 
         # Lấy danh sách người dùng từ database
