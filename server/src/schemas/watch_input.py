@@ -12,7 +12,6 @@ class WatchInput(BaseModel):
     time: int
     comment: list[str]
     like: bool
-    hastag: str
     users: int
     listUser: Optional[List[dict]] = None  # Thêm field listUser
 

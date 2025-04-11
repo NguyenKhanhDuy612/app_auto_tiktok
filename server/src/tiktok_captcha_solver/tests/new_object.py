@@ -11,6 +11,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from ..seleniumsolver import SeleniumSolver
 
 from src.models.proxy_model import verify_proxy_db
 from src.schemas.watch_input import WatchInput
@@ -48,12 +49,21 @@ def open_tiktok_login(driver, username, password) -> None:
     try:
         login_button = driver.find_element(By.XPATH, '//button[contains(@data-e2e,"login-button")]')
         login_button.click()
-        time.sleep(10)
+        time.sleep(20)
         print("✅ Đã cố gắng đăng nhập.")
     except Exception as e:
         print(f"⚠️ Lỗi khi nhấn nút đăng nhập: {e}")
         return
-    print("✅ CAPTCHA đã được xử lý (nếu có).")
+    
+    #captcha
+    try:
+        sadcaptcha = SeleniumSolver(driver, os.environ["API_KEY"], mouse_step_size=2)
+        sadcaptcha.solve_captcha_if_present()
+        print("✅ CAPTCHA đã được xử lý (nếu có).")
+    except Exception as e:
+        print(f"⚠️ Lỗi khi xử lý CAPTCHA: {e}")
+        return
+
 
     # await asyncio.sleep(10)
     time.sleep(10)
@@ -151,57 +161,18 @@ def test_proxy(proxy):
     except Exception:
         pass
     return False
-async def process_account(user_data: dict, input_data: WatchInput, working_proxy: str):
-    """Xử lý một tài khoản."""
-    username = user_data["UserName"]
-    password = user_data["Password"]
-    chrome_options = Options()
-    if working_proxy:
-        chrome_options.add_argument(f'--proxy-server=http://{working_proxy}')
-        chrome_options.add_argument('--disable-blink-features=AutomationControlled')
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        chrome_options.add_experimental_option('useAutomationExtension', False)
 
-        driver = webdriver.Chrome(options=chrome_options)
-        driver.set_window_size(1200, 800)
-
-        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 👤 Đang xử lý tài khoản: {username}")
-
-        try:
-            # Đăng nhập TikTok
-            open_tiktok_login(driver, username, password)
-
-            # Danh sách bình luận
-            comments = input_data.comment
-            num_comments = len(comments)
-            like = input_data.like
-            urlVideo = input_data.url
-            timelogout = input_data.time
-
-            # Tham gia livestream và gửi bình luận
-            join_livestream_and_comment(driver, username, comments, num_comments, like, urlVideo, timelogout)
-
-        except Exception as e:
-            print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] ⚠️ Lỗi khi xử lý tài khoản {username}: {e}")
-        finally:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] 🚪 Đang đóng trình duyệt cho tài khoản: {username}")
-            driver.quit()
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] 🔒 Đã đóng trình duyệt cho tài khoản: {username}")
-
-async def test_join_livestream_and_comment(input_data: WatchInput):
-    """Kiểm tra chức năng tham gia livestream và gửi bình luận."""
+def run_watch_task(user_data: dict, comments: list[str], like: bool, urlVideo: str, timelogout: int):
+    """Chạy một phiên đăng nhập và bình luận cho 1 tài khoản TikTok."""
     proxy_list = get_proxy_list()
-    print(f"Số lượng proxy: {len(proxy_list)}")
     working_proxy = None
 
     for proxy in proxy_list:
         proxy = proxy.strip()
-        # Kiểm tra proxy trong cơ sở dữ liệu
         print(f"🧪 Đang thử proxy: {proxy}...", end=" ")
         if test_proxy(proxy):
             proxy_db = verify_proxy_db(proxy)
             if proxy_db:
-                print("✅ Proxy đã được lưu vào cơ sở dữ liệu.")
                 print("✅ Thành công! Dùng được proxy.")
                 working_proxy = proxy
                 break
@@ -209,13 +180,47 @@ async def test_join_livestream_and_comment(input_data: WatchInput):
             print("❌ Không dùng được.")
 
     if working_proxy:
-        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 🚀 Bắt đầu xử lý tài khoản đồng thời...")
-        tasks = [process_account(user_data, input_data, working_proxy) for user_data in input_data.listUser]
-        await asyncio.gather(*tasks)
-        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 🎉 Hoàn thành xử lý tất cả tài khoản.")
-    else:
-        print("🚫 Không thể mở trình duyệt vì không tìm thấy proxy hoạt động.")
+        try:
+            chrome_options = Options()
+            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            chrome_options.add_experimental_option('useAutomationExtension', False)
+            chrome_options.add_argument(f'--proxy-server=http://{working_proxy}')
 
+            driver = webdriver.Chrome(options=chrome_options)
+            driver.set_window_size(1200, 800)
+
+            username = user_data["UserName"]
+            password = user_data["Password"]
+            print(f"🔐 Bắt đầu với user: {username}")
+
+            open_tiktok_login(driver, username, password)
+            join_livestream_and_comment(driver, comments, len(comments), like, urlVideo, timelogout)
+
+        except Exception as e:
+            print(f"❌ Lỗi với user {user_data['UserName']}: {e}")
+        finally:
+            if 'driver' in locals():
+                driver.quit()
+    else:
+        print(f"🚫 User {user_data['UserName']} không tìm thấy proxy hoạt động.")
+
+
+async def test_join_livestream_and_comment(input_data: WatchInput):
+    tasks = []
+
+    for user in input_data.listUser:
+        task = asyncio.to_thread(
+            run_watch_task,
+            user,
+            input_data.comment,
+            input_data.like,
+            input_data.url,
+            input_data.time
+        )
+        tasks.append(task)
+
+    await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
     # Ví dụ dữ liệu đầu vào (thay thế bằng dữ liệu thực tế của bạn)
