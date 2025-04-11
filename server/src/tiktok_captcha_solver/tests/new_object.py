@@ -1,94 +1,112 @@
 import asyncio
 import logging
 import os
-import requests
-import random 
-
+import random
+import time
 from dotenv import load_dotenv
+import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+from src.models.proxy_model import verify_proxy_db
+from src.schemas.watch_input import WatchInput
+
 load_dotenv()
 
-from playwright.async_api import Page, async_playwright, expect
-from playwright_stealth import stealth_async, StealthConfig
-import pytest
 
-from tiktok_captcha_solver.captchatype import CaptchaType
-from ..asyncplaywrightsolver import AsyncPlaywrightSolver
-
-from src.schemas.watch_input import WatchInput  # Import từ file mới
-
-
-async def open_tiktkok_login(page: Page) -> None:
-    """Đăng nhập vào TikTok với xử lý CAPTCHA."""
-    await page.goto("https://www.tiktok.com/login/phone-or-email/email")
-    await asyncio.sleep(5)
+def open_tiktok_login(driver, username, password) -> None:
+    """Đăng nhập vào TikTok."""
+    driver.get("https://www.tiktok.com/login/phone-or-email/email")
+    time.sleep(15)
 
     # Nhập tên người dùng
-    write_username = page.locator('xpath=//input[contains(@name,"username")]')
-    await write_username.type(os.environ["TIKTOK_USERNAME"])
-    await asyncio.sleep(2)
+    try:
+        username_input = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.NAME, "username"))
+        )
+        username_input.send_keys(username)
+        time.sleep(2)
+    except Exception as e:
+        print(f"⚠️ Lỗi khi nhập tên người dùng: {e}")
+        return
 
     # Nhập mật khẩu
-    write_password = page.get_by_placeholder('Password')
-    await write_password.type(os.environ["TIKTOK_PASSWORD"])
-    await asyncio.sleep(2)
+    try:
+        password_input = driver.find_element(By.XPATH, '//input[@placeholder="Password"]')
+        password_input.send_keys(password)
+        time.sleep(2)
+    except Exception as e:
+        print(f"⚠️ Lỗi khi nhập mật khẩu: {e}")
+        return
 
     # Nhấn nút đăng nhập
-    login_btn = await page.locator('//button[contains(@data-e2e,"login-button")]').click()
-    await asyncio.sleep(5)
-
-    # Xử lý CAPTCHA nếu xuất hiện
-    # sadcaptcha = AsyncPlaywrightSolver(page, os.environ["API_KEY"])
-    # await sadcaptcha.solve_captcha_if_present()
+    try:
+        login_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, '//button[contains(@data-e2e,"login-button")]'))
+        )
+        login_button.click()
+        time.sleep(10)
+        print("✅ Đã cố gắng đăng nhập.")
+    except Exception as e:
+        print(f"⚠️ Lỗi khi nhấn nút đăng nhập: {e}")
+        return
     print("✅ CAPTCHA đã được xử lý (nếu có).")
 
-    await asyncio.sleep(10)
+    # await asyncio.sleep(10)
+    time.sleep(10)
 
-
-async def join_livestream_and_comment(page: Page, comments: str, num_comments: int, like: bool) -> None:
+def join_livestream_and_comment(driver, comments: list[str], num_comments: int, like: bool,urlVideo: str) -> None:
     """Tham gia livestream và gửi bình luận."""
-    # Truy cập livestream
-    await page.goto("https://www.tiktok.com/@haokiet2001/live")
-    await asyncio.sleep(10)
+    try:
+        driver.get(urlVideo)
+        time.sleep(10)
 
-    for i in range(num_comments):
-        # Chọn ngẫu nhiên một bình luận từ danh sách
-        random_comment = random.choice(comments)
+        for i in range(num_comments):
+            try:
+                random_comment = random.choice(comments)
+                print(f"📝 Đang chuẩn bị bình luận {i + 1}/{num_comments}: {random_comment}")
+                time.sleep(15)
 
-        # Tìm ô nhập bình luận và thực hiện hover, click, rồi nhập
-        comment_box = page.locator('.tiktok-1772j3i[contenteditable="plaintext-only"]')
-        await comment_box.hover()  # Hover vào ô nhập bình luận
-        await asyncio.sleep(1)
-        await comment_box.click()  # Nhấn vào ô nhập bình luận
-        await asyncio.sleep(1)
-        await comment_box.fill(random_comment)  # Điền nội dung bình luận
-        await asyncio.sleep(1)
+                # Tìm ô nhập bình luận
+                comment_box = WebDriverWait(driver, 10).until(
+                    EC.visibility_of_element_located((By.CSS_SELECTOR, 'div[contenteditable="plaintext-only"]'))
+                )
+                print("✅ Đã tìm thấy ô bình luận.")
+                comment_box.click()
+                time.sleep(1)
+                comment_box.send_keys(random_comment)
+                time.sleep(1)
 
-        # Nhấn nút gửi bình luận
-        send_button = page.locator('.tiktok-mortok.e2lzvyu9')  # Class của nút gửi
-        await send_button.hover()  # Hover vào nút gửi
-        await asyncio.sleep(1)
-        await send_button.click()  # Nhấn nút gửi
-        await asyncio.sleep(2)
+                # Nhấn nút gửi
+                send_button = WebDriverWait(driver, 5).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, 'div[class*="tiktok-"] button[type="submit"]'))
+                )
+                send_button.click()
+                print(f"✅ Bình luận {i + 1}/{num_comments} đã gửi: {random_comment}")
+                time.sleep(2)
 
-        # Đảm bảo bình luận đã được gửi
-        confirmation = page.locator('.tiktok-fa6jvh.e1tv929b2')  # Class xác nhận bình luận đã gửi
-        if await confirmation.is_visible():
-            print(f"✅ Bình luận {i + 1}/{num_comments} đã gửi: {random_comment}")
-        else:
-            print(f"❌ Bình luận {i + 1}/{num_comments} không thể gửi. Vui lòng kiểm tra lại.")
+                # Thả tim nếu bật
+                if like:
+                    try:
+                        heart_button = WebDriverWait(driver, 5).until(
+                            EC.element_to_be_clickable((By.CSS_SELECTOR, '.tiktok-1cu4ad.e1tv929b3'))
+                        )
+                        heart_button.click()
+                        print(f"❤️ Đã thả tim sau bình luận {i + 1}")
+                    except Exception as e:
+                        print(f"⚠️ Không tìm thấy hoặc không thể click nút thả tim: {e}")
 
-        # Thả tim
-        if like:
-            heart_button = page.locator('.tiktok-1cu4ad.e1tv929b3')  # Class của nút thả tim
-            if await heart_button.is_visible():
-                await heart_button.hover()  # Hover vào nút thả tim
-                await asyncio.sleep(1)
-                await heart_button.click()  # Nhấn nút thả tim
-                print(f"❤️ Đã thả tim sau bình luận {i + 1}/{num_comments}.")
-            else:
-                print(f"❌ Không thể thả tim sau bình luận {i + 1}/{num_comments}.")
+            except Exception as e:
+                print(f"❌ Lỗi khi gửi bình luận {i + 1}: {e}")
 
-    print("🎉 Hoàn thành việc gửi bình luận!")
+        print("🎉 Hoàn thành việc gửi bình luận!")
+
+    except Exception as e:
+        print(f"⚠️ Lỗi khi tham gia livestream: {e}")
+
 
 def get_proxy_list():
     print("🔄 Đang lấy danh sách proxy...")
@@ -104,87 +122,93 @@ def test_proxy(proxy):
         "https": f"http://{proxy}",
     }
     try:
-        r = requests.get("http://httpbin.org/ip", proxies=proxies, timeout=5)
-        if r.status_code == 200:
+        r_http = requests.get("http://httpbin.org/ip", proxies=proxies, timeout=5)
+        r_https = requests.get("https://httpbin.org/ip", proxies=proxies, timeout=5)
+        if r_http.status_code == 200 and r_https.status_code == 200:
             return True
     except Exception:
         pass
     return False
 
-@pytest.mark.asyncio
 async def test_join_livestream_and_comment(input_data: WatchInput):
     """Kiểm tra chức năng tham gia livestream và gửi bình luận."""
-    caplog.set_level(logging.DEBUG)
+    proxy_list = get_proxy_list()
+    print(f"Số lượng proxy: {len(proxy_list)}")
+    working_proxy = None
 
-    async with async_playwright() as p:
-        proxy_list = get_proxy_list()
-        print(f"Số lượng proxy: {len(proxy_list)}")
-        proxychorm = ""
-        for proxy in proxy_list:
-            proxy = proxy.strip()
-            print(f"🧪 Đang thử proxy: {proxy}...", end=" ")
-
-            if test_proxy(proxy):
+    for proxy in proxy_list:
+        proxy = proxy.strip()
+        # Kiểm tra proxy trong cơ sở dữ liệu
+        print(f"🧪 Đang thử proxy: {proxy}...", end=" ")
+        if test_proxy(proxy):
+            proxy_db = verify_proxy_db(proxy)
+            if proxy_db:
+                print("✅ Proxy đã được lưu vào cơ sở dữ liệu.")
                 print("✅ Thành công! Dùng được proxy.")
-                proxychorm = proxy
+                working_proxy = proxy
                 break
-            else:
-                print("❌ Không dùng được.")
-
         else:
-            print("🚫 Không tìm thấy proxy nào hoạt động.")
-        if proxychorm:
-            print(f"🧪 Đang thử proxy mở trình duyệt: {proxychorm}...", end=" ")
-            # Tạo một thư mục tạm thời cho user data dir
-            print(f"📁 User data directory: {user_data_dir}")
+            print("❌ Không dùng được.")
+
+    if working_proxy:
+        print(f"🧪 Đang thử mở trình duyệt với proxy: {working_proxy}...")
+        try:
+            chrome_options = Options()
+            chrome_options.add_argument(f'--proxy-server=http://{working_proxy}')
+            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            chrome_options.add_experimental_option('useAutomationExtension', False)
+
+            driver = webdriver.Chrome(options=chrome_options)
+            driver.set_window_size(1200, 800)
+
+            username = input_data.listUser[0]["UserName"]  # Assuming you want to use the first user
+            password = input_data.listUser[0]["Password"]  # Assuming you want to use the first user
+
+            # Đăng nhập TikTok
+            open_tiktok_login(driver, username, password)
+
+            # Danh sách bình luận
+            comments = input_data.comment
+            num_comments = len(comments)
+            like = input_data.like
+            urlVideo = input_data.url
+            print(f"Số lượng bình luận: {num_comments}")
+            print(f"Thả tim: {'Bật' if like else 'Tắt'}")
+
+            # Tham gia livestream và gửi bình luận
+            join_livestream_and_comment(driver, comments, num_comments, like,urlVideo)
+
+            # Giữ trình duyệt mở
+            print("✅ Trình duyệt vẫn đang mở. Nhấn Ctrl+C để thoát.")
             try:
-                # Khởi chạy trình duyệt với proxy và user_data_dir
-                browser = await p.chromium.launch(
-                    headless=False,
-                    proxy={
-                        "server": f"http://{proxychorm}",
-                    }
-                )
-                page = await browser.new_page()
-                config = StealthConfig(navigator_languages=False, navigator_vendor=False, navigator_user_agent=False)
-                await stealth_async(page, config)
-
-                # Đăng nhập TikTok
-                await open_tiktkok_login(page)
-
-                # Đặt giá trị mặc định
-                num_comments = 5  # Số lượng bình luận mặc định
-                like = True  # Bật/tắt chức năng thả tim
-                print(f"Số lượng bình luận mặc định: {num_comments}")
-                print(f"Thả tim: {'Bật' if like else 'Tắt'}")
-
-                # Danh sách bình luận
-                comments = [
-                    "Video hay quá!",
-                    "Tôi rất thích nội dung này",
-                    "Cảm ơn bạn đã chia sẻ",
-                    "❤️❤️❤️",
-                    "Quá tuyệt vời!",
-                    "Tôi sẽ chia sẻ video này",
-                    "Nội dung chất lượng",
-                    "Bạn thật tài năng",
-                ]
-
-                # Tham gia livestream và gửi bình luận
-                await join_livestream_and_comment(page, comments, num_comments, like)
-
-                # Giữ trình duyệt mở
-                print("✅ Trình duyệt vẫn đang mở. Nhấn Ctrl+C để thoát.")
-
-                # Chờ vô hạn để giữ trình duyệt mở
-                await asyncio.Future()  # Chờ vô hạn
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                print("\n🔒 Đã nhận lệnh dừng. Đang đóng trình duyệt...")
             finally:
-                # Đóng trình duyệt và xóa thư mục user data dir sau khi hoàn thành
-                if 'browser' in locals() and browser.is_connected:
-                    await browser.close()
-        else:
-            print("🚫 Không thể mở trình duyệt vì không tìm thấy proxy hoạt động.")
+                driver.quit()
+                print("🔒 Đã đóng trình duyệt.")
+
+        except Exception as e:
+            print(f"⚠️ Lỗi khi khởi tạo hoặc sử dụng trình duyệt: {e}")
+        finally:
+            if 'driver' in locals() and driver:
+                driver.quit()
+                print("🔒 Đảm bảo trình duyệt đã đóng.")
+    else:
+        print("🚫 Không thể mở trình duyệt vì không tìm thấy proxy hoạt động.")
+
 
 if __name__ == "__main__":
-    # Chạy kiểm tra thủ công
-    asyncio.run(test_join_livestream_and_comment(logging.getLogger()))
+    # Ví dụ dữ liệu đầu vào (thay thế bằng dữ liệu thực tế của bạn)
+    test_input_data = WatchInput(
+        listUser=[
+            {"UserName": os.environ.get("TIKTOK_USERNAME", "testuser"), "Password": os.environ.get("TIKTOK_PASSWORD", "testpass")},
+            {"UserName": "user2", "Password": "pass2"},
+            {"UserName": "user3", "Password": "pass3"},
+        ],
+        comment=["Bình luận 1", "Bình luận 2", "Bình luận 3"],
+        like=True,
+    )
+    asyncio.run(test_join_livestream_and_comment(test_input_data))

@@ -9,7 +9,7 @@ def verify_proxy_db(proxy: str) -> list[dict]:
         print(proxy_cursor)
         if proxy_cursor:
             proxy_cursor["_id"] = str(proxy_cursor["_id"])  # Chuyển ObjectId thành chuỗi
-            return True
+            return False
         else:
             """Lưu proxy vào cơ sở dữ liệu."""
             # Tạo tài liệu proxy
@@ -19,7 +19,7 @@ def verify_proxy_db(proxy: str) -> list[dict]:
             result = proxy_collection.insert_one(proxy_data)
             
             # Trả về thông tin proxy đã lưu
-            return False
+            return True
     except Exception as e:
         # Xử lý lỗi khi lưu vào database
         print(f"Lỗi khi lưu proxy {proxy} vào cơ sở dữ liệu: {e}")
