@@ -25,3 +25,9 @@ get api https://www.sadcaptcha.com/
 ## RUN
 
 pytest new_object.py
+
+## cài đặt fastAPI local
+cd server
+pip install fastapi uvicorn pymongo python-dotenv
+
+run uvicorn main:app --reload to start swagger
