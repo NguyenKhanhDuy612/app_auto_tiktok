@@ -8,3 +8,8 @@ playwright
 playwright-stealth
 undetected_chromedriver
 setuptools
+fastapi
+uvicorn
+pymongo
+python-dotenv
+webdriver-manager
