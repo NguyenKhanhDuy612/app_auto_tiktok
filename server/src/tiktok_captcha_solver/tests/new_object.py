@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import logging
 import os
 import random
@@ -19,9 +20,10 @@ load_dotenv()
 
 
 def open_tiktok_login(driver, username, password) -> None:
+    # username = os.environ.get("TIKTOK_USERNAME", username)
     """Đăng nhập vào TikTok."""
     driver.get("https://www.tiktok.com/login/phone-or-email/email")
-    time.sleep(15)
+    time.sleep(10)
 
     # Nhập tên người dùng
     try:
@@ -45,9 +47,7 @@ def open_tiktok_login(driver, username, password) -> None:
 
     # Nhấn nút đăng nhập
     try:
-        login_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, '//button[contains(@data-e2e,"login-button")]'))
-        )
+        login_button = driver.find_element(By.XPATH, '//button[contains(@data-e2e,"login-button")]')
         login_button.click()
         time.sleep(20)
         print("✅ Đã cố gắng đăng nhập.")
@@ -68,12 +68,12 @@ def open_tiktok_login(driver, username, password) -> None:
     # await asyncio.sleep(10)
     time.sleep(10)
 
-def join_livestream_and_comment(driver, comments: list[str], num_comments: int, like: bool,urlVideo: str) -> None:
+def join_livestream_and_comment(driver, comments: list[str], num_comments: int, like: bool,urlVideo: str, timelogout: int) -> None:
     """Tham gia livestream và gửi bình luận."""
     try:
         driver.get(urlVideo)
         time.sleep(10)
-
+        start_watch_time = datetime.datetime.now()
         for i in range(num_comments):
             try:
                 random_comment = random.choice(comments)
@@ -92,7 +92,7 @@ def join_livestream_and_comment(driver, comments: list[str], num_comments: int, 
 
                 # Nhấn nút gửi
                 send_button = WebDriverWait(driver, 5).until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, 'div[class*="tiktok-"] button[type="submit"]'))
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, '.e2lzvyu9'))
                 )
                 send_button.click()
                 print(f"✅ Bình luận {i + 1}/{num_comments} đã gửi: {random_comment}")
@@ -113,6 +113,28 @@ def join_livestream_and_comment(driver, comments: list[str], num_comments: int, 
                 print(f"❌ Lỗi khi gửi bình luận {i + 1}: {e}")
 
         print("🎉 Hoàn thành việc gửi bình luận!")
+        # Bắt đầu tính thời gian xem live
+        if timelogout > 0:
+            watch_until = start_watch_time + datetime.timedelta(minutes=timelogout)
+            print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] ⏳ Bắt đầu xem live từ {start_watch_time.strftime('%H:%M:%S')} đến {watch_until.strftime('%H:%M:%S')}.")
+            while datetime.datetime.now() < watch_until:
+                remaining_time = watch_until - datetime.datetime.now()
+                time_watched = datetime.datetime.now() - start_watch_time
+                print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] ⏳ Đang xem live. Đã xem được: {time_watched.seconds} giây. Còn lại: {remaining_time.seconds} giây.", end='\r')
+                time.sleep(5)  # Kiểm tra thời gian mỗi 5 giây
+
+            end_watch_time = datetime.datetime.now()
+            duration_watched = end_watch_time - start_watch_time
+            print(f"\n[{datetime.datetime.now().strftime('%H:%M:%S')}] 🎬 Đã hết thời gian xem live. Đã xem trong: {duration_watched.seconds} giây.")
+
+            # Cuộn màn hình để xem live khác (thao tác đơn giản, có thể cần cải thiện)
+            print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 🔄 Đang cuộn màn hình để xem live khác...")
+            driver.execute_script("window.scrollBy(0, 500);")  # Cuộn xuống một chút
+            time.sleep(5) # Chờ một chút sau khi cuộn
+
+        print("🚪 Đang đóng trình duyệt.")
+        driver.quit()
+        print("🔒 Đã đóng trình duyệt.")
 
     except Exception as e:
         print(f"⚠️ Lỗi khi tham gia livestream: {e}")
@@ -139,6 +161,42 @@ def test_proxy(proxy):
     except Exception:
         pass
     return False
+async def process_account(user_data: dict, input_data: WatchInput, working_proxy: str):
+    """Xử lý một tài khoản."""
+    username = user_data["UserName"]
+    password = user_data["Password"]
+    chrome_options = Options()
+    if working_proxy:
+        chrome_options.add_argument(f'--proxy-server=http://{working_proxy}')
+        chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
+
+        driver = webdriver.Chrome(options=chrome_options)
+        driver.set_window_size(1200, 800)
+
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 👤 Đang xử lý tài khoản: {username}")
+
+        try:
+            # Đăng nhập TikTok
+            open_tiktok_login(driver, username, password)
+
+            # Danh sách bình luận
+            comments = input_data.comment
+            num_comments = len(comments)
+            like = input_data.like
+            urlVideo = input_data.url
+            timelogout = input_data.time
+
+            # Tham gia livestream và gửi bình luận
+            join_livestream_and_comment(driver, username, comments, num_comments, like, urlVideo, timelogout)
+
+        except Exception as e:
+            print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] ⚠️ Lỗi khi xử lý tài khoản {username}: {e}")
+        finally:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] 🚪 Đang đóng trình duyệt cho tài khoản: {username}")
+            driver.quit()
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] 🔒 Đã đóng trình duyệt cho tài khoản: {username}")
 
 async def test_join_livestream_and_comment(input_data: WatchInput):
     """Kiểm tra chức năng tham gia livestream và gửi bình luận."""
@@ -161,51 +219,10 @@ async def test_join_livestream_and_comment(input_data: WatchInput):
             print("❌ Không dùng được.")
 
     if working_proxy:
-        print(f"🧪 Đang thử mở trình duyệt với proxy: {working_proxy}...")
-        try:
-            chrome_options = Options()
-            chrome_options.add_argument(f'--proxy-server=http://{working_proxy}')
-            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
-            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-            chrome_options.add_experimental_option('useAutomationExtension', False)
-
-            driver = webdriver.Chrome(options=chrome_options)
-            driver.set_window_size(1200, 800)
-
-            username = input_data.listUser[0]["UserName"]  # Assuming you want to use the first user
-            password = input_data.listUser[0]["Password"]  # Assuming you want to use the first user
-
-            # Đăng nhập TikTok
-            open_tiktok_login(driver, username, password)
-
-            # Danh sách bình luận
-            comments = input_data.comment
-            num_comments = len(comments)
-            like = input_data.like
-            urlVideo = input_data.url
-            print(f"Số lượng bình luận: {num_comments}")
-            print(f"Thả tim: {'Bật' if like else 'Tắt'}")
-
-            # Tham gia livestream và gửi bình luận
-            join_livestream_and_comment(driver, comments, num_comments, like,urlVideo)
-
-            # Giữ trình duyệt mở
-            print("✅ Trình duyệt vẫn đang mở. Nhấn Ctrl+C để thoát.")
-            try:
-                while True:
-                    time.sleep(1)
-            except KeyboardInterrupt:
-                print("\n🔒 Đã nhận lệnh dừng. Đang đóng trình duyệt...")
-            finally:
-                driver.quit()
-                print("🔒 Đã đóng trình duyệt.")
-
-        except Exception as e:
-            print(f"⚠️ Lỗi khi khởi tạo hoặc sử dụng trình duyệt: {e}")
-        finally:
-            if 'driver' in locals() and driver:
-                driver.quit()
-                print("🔒 Đảm bảo trình duyệt đã đóng.")
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 🚀 Bắt đầu xử lý tài khoản đồng thời...")
+        tasks = [process_account(user_data, input_data, working_proxy) for user_data in input_data.listUser]
+        await asyncio.gather(*tasks)
+        print(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] 🎉 Hoàn thành xử lý tất cả tài khoản.")
     else:
         print("🚫 Không thể mở trình duyệt vì không tìm thấy proxy hoạt động.")
 
