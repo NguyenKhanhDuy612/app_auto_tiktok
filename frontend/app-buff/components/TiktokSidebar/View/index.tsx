@@ -29,13 +29,13 @@ const View = () => {
       comment: commentLines,
       like: isHeartEnabled,
       users: soLuongMat,
-    }).catch((err) => {
+    }).catch((err: any) => {
       console.error(err);
     })
   };
 
   useEffect(() => {
-    callApi("/hastag", "GET").then((res) => {
+    callApi("/hastag", "GET").then((res: any) => {
       if (res.status === 200) {
         initialHashtags.current = res.data.result
       }
