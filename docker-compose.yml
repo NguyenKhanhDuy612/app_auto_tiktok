@@ -1,0 +1,22 @@
+services:
+  frontend:
+    build:
+      context: ./frontend/app-buff
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/app-buff:/usr/src/app
+    stdin_open: true
+    tty: true
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server:/usr/src/app
+    stdin_open: true
+    tty: true
